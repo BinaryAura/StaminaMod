@@ -40,16 +40,10 @@ public class GuiStamina extends GuiIngameForge {
 	public static boolean renderStamina = true;
 	
 	// Top of the first bar on the left side of the HUD, excluding the XP bar, This would be my Stamina Bar.
-	public static int left_height = 39;
+	public static int left_height = 36;
 	
 	private static Minecraft mc = Minecraft.getMinecraft();
 	private static final ResourceLocation staminaBar = new ResourceLocation(StaminaMod.MODID, "textures/gui/stamina_bar.png");
-	private static final ResourceLocation background = new ResourceLocation(StaminaMod.MODID, "textures/gui/stamina_background.png");
-	private static final ResourceLocation max = new ResourceLocation(StaminaMod.MODID, "textures/gui/stamina_max.png");
-	private static final ResourceLocation current = new ResourceLocation(StaminaMod.MODID, "textures/gui/stamina_current.png");
-	private static final ResourceLocation adren = new ResourceLocation(StaminaMod.MODID, "textures/gui/stamina_adrenaline.png");
-	private static final ResourceLocation currentAdren = new ResourceLocation(StaminaMod.MODID, "textures/gui/stamina_current_adren.png");
-	private static final ResourceLocation maxAdren = new ResourceLocation(StaminaMod.MODID, "textures/gui/stamina_current_adren.png");
 	
 	/**
 	 * 
@@ -175,8 +169,7 @@ public class GuiStamina extends GuiIngameForge {
 			if(mc.playerController.shouldDrawHUD()) {
 				
 				// Ask if the game should render each, if so, do so
-//				if(renderStamina) renderStamina(width, height);
-				left_height += 10;
+				if(renderStamina) renderStamina(width, height);
 				if(renderHealth) renderHealth(width, height);
 				if(renderArmor) renderArmor(width, height);
 			}
@@ -225,80 +218,61 @@ public class GuiStamina extends GuiIngameForge {
 	*  @param width is the width of the window for location calculation
 	*  @param height is the height of the window for location calculation
 	*/
-	@SubscribeEvent(priority = EventPriority.NORMAL)
-	public void renderStamina(RenderGameOverlayEvent event) {
-//	protected void renderStamina(int width, int height) {
-		if(event.type != ElementType.BOSSHEALTH || event.isCancelable()) return;
-		if(mc.playerController.enableEverythingIsScrewedUpMode() || !mc.playerController.shouldDrawHUD()) return;
+	protected void renderStamina(int width, int height) {
 		
 		props = StaminaPlayer.get(mc.thePlayer);	// Extended Properties
 		if(props == null || props.getStamina(StaminaType.STAMINA) == 0) return;
 		
-		left_height = 39;
-		
-		int width = mc.displayWidth;
-		int height = mc.displayHeight;
-		
 		mc.mcProfiler.startSection("stamina");
 		GL11.glEnable(GL11.GL_BLEND);
-//		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		bind(staminaBar);
 					
-		int left = width / 2 - 93;
+		int left = width / 2 - 91;
 		int top  = height - left_height;
 		int barWidth = 82;
 		
-		int maximumFill = (int)(props.getStamina(StaminaType.MAXIMUM) / props.getStamina(StaminaType.STAMINA) * barWidth); // M
-		int currentFill = (int)(props.getStamina(StaminaType.CURRENT) / props.getStamina(StaminaType.STAMINA) * barWidth); // C
-		int adrenalineFill = (int)(props.getStamina(StaminaType.ADRENALINE) / props.getStamina(StaminaType.STAMINA) * barWidth);  // A
+//		int maximumFill = (int)(props.getStamina(StaminaType.MAXIMUM) / props.getStamina(StaminaType.STAMINA) * barWidth); // M
+//		int currentFill = (int)(props.getStamina(StaminaType.CURRENT) / props.getStamina(StaminaType.STAMINA) * barWidth); // C
+//		int adrenalineFill = (int)(props.getStamina(StaminaType.ADRENALINE) / props.getStamina(StaminaType.STAMINA) * barWidth);  // A
 		
-		System.out.printf("%.1f : %.1f : %.1f : %.1f %n", props.getStamina(StaminaType.CURRENT), props.getStamina(StaminaType.MAXIMUM), props.getStamina(StaminaType.ADRENALINE), props.getStamina(StaminaType.STAMINA));
+		int maximumFill = (int)(1000.0F / 2000.0F * barWidth);
+		int currentFill = (int)(500.0F / 2000.0F * barWidth);
+		int adrenalineFill = (int)(1500.0F / 2000.0F * barWidth);
 		
-//		int maximumFill = (int)(1500 / 2000 * barWidth);   // M
-//		int currentFill = (int)(1000 / 2000 * barWidth);   // C
-//		int adrenalineFill = (int)(500 / 2000 * barWidth); // A
-//			bind(background);
-		drawTexturedModalRect(left, top, 0, 0, barWidth, 5); // Background
+//		System.out.printf("%.1f : %.1f : %.1f : %.1f %n", props.getStamina(StaminaType.CURRENT), props.getStamina(StaminaType.MAXIMUM), props.getStamina(StaminaType.ADRENALINE), props.getStamina(StaminaType.STAMINA));
+		
+		drawTexturedModalRect(left, top, 0, 0, barWidth, 5);
 		
 		// C M A
 		if(adrenalineFill >= maximumFill) {
-//				bind(adren);
-			drawTexturedModalRect(left, top, 0, 15, adrenalineFill, 5);//15
+			drawTexturedModalRect(left, top, 0, 15, adrenalineFill, 5);
 			if(maximumFill > 0) {
-//					bind(maxAdren);
-				drawTexturedModalRect(left, top, 0, 20, maximumFill, 5);//20
+				drawTexturedModalRect(left, top, 0, 20, maximumFill, 5);
 				if(currentFill > 0) {
-//						bind(currentAdren);
-					drawTexturedModalRect(left, top, 0, 24, currentFill, 5);//25
+					drawTexturedModalRect(left, top, 0, 24, currentFill, 5);
 				}
 			}
 		// C A M
 		} else if(adrenalineFill >= currentFill) {
 			if(maximumFill > 0) {
-//					bind(max);
-				drawTexturedModalRect(left, top, 0, 5, maximumFill, 5);//5
-//					bind(maxAdren);
-				drawTexturedModalRect(left, top, 0, 20, adrenalineFill, 5);//20
+				drawTexturedModalRect(left, top, 0, 5, maximumFill, 5);
+				drawTexturedModalRect(left, top, 0, 20, adrenalineFill, 5);
 				if(currentFill > 0) {
-//						bind(currentAdren);
-					drawTexturedModalRect(left, top, 0, 25, currentFill, 5);//25
+					drawTexturedModalRect(left, top, 0, 25, currentFill, 5);
 				}
 			}
 		// A C M
 		} else if(maximumFill > 0) {
-//				bind(max);
-			drawTexturedModalRect(left, top, 0, 5, maximumFill, 5);//5
+			drawTexturedModalRect(left, top, 0, 5, maximumFill, 5);
 			if(currentFill > 0) {
-//					bind(current);
-				drawTexturedModalRect(left, top, 0, 10, currentFill, 5);//10
+				drawTexturedModalRect(left, top, 0, 10, currentFill, 5);
 				if(adrenalineFill > 0) {
-//						bind(currentAdren);
-					drawTexturedModalRect(left, top, 0, 25, adrenalineFill, 5);//25
+					drawTexturedModalRect(left, top, 0, 25, adrenalineFill, 5);
 				}
 			}
 		}
-		left_height += 10;
+		left_height += 13;
 		GL11.glDisable(GL11.GL_BLEND);
 		mc.mcProfiler.endSection();
 	}

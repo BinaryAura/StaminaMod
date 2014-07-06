@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.binaryaura.staminamod.util.Queue;
-import com.binaryaura.staminamod.util.StaminaQueue;
 
 import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
+
 import net.minecraftforge.common.IExtendedEntityProperties;
 
 public class StaminaPlayer implements IExtendedEntityProperties {
