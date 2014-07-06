@@ -18,6 +18,7 @@ import net.minecraft.item.ItemSword;
 import net.minecraft.item.ItemTool;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
+import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent.Action;
@@ -27,8 +28,147 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public class StaminaStats {
 	
+	private static Minecraft mc;
+	
+	private static float difficultyModifier(EntityPlayer player) {
+		float difficultyModifier = 1.0F;
+		switch(player.worldObj.difficultySetting) {
+			case PEACEFUL:
+			case EASY:
+				difficultyModifier = 0.5F;
+				break;
+			case NORMAL:
+				difficultyModifier = 1.0F;
+				break;
+			case HARD:
+				difficultyModifier = 1.5F;
+				break;
+		}
+		return difficultyModifier;
+	}
+	
+	private static float armorModifier(ItemStack armorStack, int slot) {
+		float multiplier = 0.0F;
+		
+		/*
+		 * 0 = Boots
+		 * 1 = Leggings
+		 * 2 = Chest-Plate
+		 * 3 = Helmet
+		 */
+		switch(slot) {
+			case 0:
+				multiplier += 1.0F;
+				break;
+			case 1:
+				multiplier += 3.0F;
+				break;
+			case 2:
+				multiplier += 4.0F;
+				break;
+			case 3:
+				multiplier += 2.0F;
+				break;
+		}
+		
+		if(armorStack == null)
+			return multiplier / 10;
+		ItemArmor armor = (ItemArmor)armorStack.getItem();
+		ItemArmor.ArmorMaterial material = armor.getArmorMaterial();
+		switch(material) {
+			case CLOTH:
+				multiplier /= 8;
+				break;
+			case DIAMOND:
+				multiplier /= 6;
+				break;
+			case CHAIN:
+				multiplier /= 5;
+				break;
+			case IRON:
+				multiplier /= 3;
+				break;
+			case GOLD:
+				multiplier /= 1;
+				break;
+		}
+		return multiplier;
+	}	
+	
+	private static int energyMultiplier(Item.ToolMaterial material) {
+		int energyMultiplier = 0;
+		switch(material) {
+			case WOOD:
+				energyMultiplier = 4;
+				break;
+			case EMERALD:
+				energyMultiplier = 3;
+				break;
+			case STONE:
+				energyMultiplier = 2;
+				break;
+			case IRON:
+				energyMultiplier = 1;
+				break;
+			case GOLD:
+				energyMultiplier = 0;
+				break;				
+		}
+		return energyMultiplier;
+	}
+	
+	private static int energyMultiplier(String material) {
+		int energyMultiplier = 0;
+		switch(material) {
+		case "WOOD":
+			energyMultiplier = 4;
+			break;
+		case "EMERALD":
+			energyMultiplier = 3;
+			break;
+		case "STONE":
+			energyMultiplier = 2;
+			break;
+		case "IRON":
+			energyMultiplier = 1;
+			break;
+		case "GOLD":
+			energyMultiplier = 0;
+			break;				
+		}
+	return energyMultiplier;
+	}
+	
 	public StaminaStats(Minecraft mc) {
 		this.mc = mc;
+	}
+	
+	@SubscribeEvent(priority = EventPriority.NORMAL)
+	public void handleFood(PlayerUseItemEvent.Finish event) {
+		if(event.entity instanceof EntityPlayer) {
+			EntityPlayer player = (EntityPlayer)event.entity;
+			StaminaPlayer props = StaminaPlayer.get(player);
+			if(props != null && mc.playerController.isNotCreative()) {
+				ItemStack itemStack = player.inventory.getCurrentItem();
+				Item itemInUse = itemStack.getItem();
+				if(itemInUse instanceof ItemFood) {
+					ItemFood food = (ItemFood)itemInUse;
+					float change = (200 * food.func_150906_h(itemStack) / difficultyModifier(player));
+					props.addToQueue(StaminaType.CURRENT, change, 3.0F);
+				}
+			}
+		}
+	}
+	
+	@SubscribeEvent(priority = EventPriority.NORMAL)
+	public void handlePlayerJump(LivingJumpEvent event) {
+		if(event.entity instanceof EntityPlayer) {
+			EntityPlayer player = (EntityPlayer)event.entity;
+			StaminaPlayer props = StaminaPlayer.get(player);
+			if(props != null && mc.playerController.isNotCreative()) {
+//				player.motionY = 0.20;
+			}
+		}
 	}
 	
 	@SubscribeEvent(priority = EventPriority.NORMAL)
@@ -40,20 +180,25 @@ public class StaminaStats {
 	@SubscribeEvent(priority = EventPriority.NORMAL)
 	public void handlePlayerUpdate(LivingUpdateEvent event) {
 		if(event.entity instanceof EntityPlayer) {
-			System.out.println("Is EntityPlayer");
 			EntityPlayer player = (EntityPlayer)event.entity;
 			StaminaPlayer props = StaminaPlayer.get(player);
 			if(props != null && mc.playerController.isNotCreative()) {
-				System.out.println("Props isn't Null, It is Not Creative");
+				float armorMulti = 0.0F;
+				ItemStack[] armor = player.inventory.armorInventory;
+				for(int i = 0; i < armor.length; i++) {
+					armorMulti += armorModifier(armor[i], i);
+				}
+				
 				if(player.isSprinting()) {
-					System.out.println("Is Sprinting");
-					float multiplier = 0.0F;
-					ItemStack[] armor = player.inventory.armorInventory;
-					for(int i = 0; i < armor.length; i++)
-						multiplier += armorModifier(armor[i], i);
-					float change = (-2 * multiplier * difficultyModifier(player));
-					props.addToQueue(StaminaType.CURRENT, change);
-				}				
+					props.addToQueue(StaminaType.CURRENT, -armorMulti * difficultyModifier(player));
+				}
+				if(player.isOnLadder() && player.motionY > 0) {
+					props.addToQueue(StaminaType.CURRENT, -armorMulti * difficultyModifier(player));
+				}
+				if(!player.isSprinting()) {
+					props.addToQueue(StaminaType.CURRENT, 2);
+				}
+				props.update();
 			}
 		}
 	}
@@ -108,123 +253,4 @@ public class StaminaStats {
 		}
 	}
 	
-	@SubscribeEvent(priority = EventPriority.NORMAL)
-	public void handleFood(PlayerUseItemEvent.Finish event) {
-		if(event.entity instanceof EntityPlayer) {
-			EntityPlayer player = (EntityPlayer)event.entity;
-			StaminaPlayer props = StaminaPlayer.get(player);
-			if(props != null && mc.playerController.isNotCreative()) {
-				ItemStack itemStack = player.inventory.getCurrentItem();
-				Item itemInUse = itemStack.getItem();
-				if(itemInUse instanceof ItemFood) {
-					ItemFood food = (ItemFood)itemInUse;
-					float change = (200 * food.func_150906_h(itemStack) / difficultyModifier(player));
-					props.addToQueue(StaminaType.CURRENT, change, 3.0F);
-				}
-			}
-		}
-	}
-	
-	public static float difficultyModifier(EntityPlayer player) {
-		float difficultyModifier = 1.0F;
-		switch(player.worldObj.difficultySetting) {
-			case PEACEFUL:
-			case EASY:
-				difficultyModifier = 0.5F;
-				break;
-			case NORMAL:
-				difficultyModifier = 1.0F;
-				break;
-			case HARD:
-				difficultyModifier = 1.5F;
-				break;
-		}
-		return difficultyModifier;
-	}
-	
-	private float armorModifier(ItemStack armorStack, int slot) {
-		float multiplier = 0.0F;
-		if(armorStack == null)
-			return multiplier;
-		ItemArmor armor = (ItemArmor)armorStack.getItem();
-		ItemArmor.ArmorMaterial material = armor.getArmorMaterial();
-		switch(material) {
-			case CLOTH:
-				multiplier += 1;
-				break;
-			case DIAMOND:
-				multiplier += 2;
-				break;
-			case CHAIN:
-				multiplier += 3;
-				break;
-			case IRON:
-				multiplier += 4;
-				break;
-			case GOLD:
-				multiplier += 5;
-				break;
-		}
-		switch(slot) {
-			case 0:
-				multiplier += 1;
-				break;
-			case 1:
-				multiplier += 2;
-				break;
-			case 2:
-				multiplier += 3;
-				break;
-			case 3:
-				multiplier += 4;
-				break;
-		}
-		return (multiplier - 1.0F)/8;
-	}
-	
-	private static int energyMultiplier(Item.ToolMaterial material) {
-		int energyMultiplier = 0;
-		switch(material) {
-			case WOOD:
-				energyMultiplier = 4;
-				break;
-			case EMERALD:
-				energyMultiplier = 3;
-				break;
-			case STONE:
-				energyMultiplier = 2;
-				break;
-			case IRON:
-				energyMultiplier = 1;
-				break;
-			case GOLD:
-				energyMultiplier = 0;
-				break;				
-		}
-		return energyMultiplier;
-	}
-	
-	private static int energyMultiplier(String material) {
-		int energyMultiplier = 0;
-		switch(material) {
-		case "WOOD":
-			energyMultiplier = 4;
-			break;
-		case "EMERALD":
-			energyMultiplier = 3;
-			break;
-		case "STONE":
-			energyMultiplier = 2;
-			break;
-		case "IRON":
-			energyMultiplier = 1;
-			break;
-		case "GOLD":
-			energyMultiplier = 0;
-			break;				
-		}
-	return energyMultiplier;
-	}
-	
-	private static Minecraft mc;
 }

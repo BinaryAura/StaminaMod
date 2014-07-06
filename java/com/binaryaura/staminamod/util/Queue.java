@@ -34,7 +34,7 @@ public class Queue {
 	public float getNetChange() {
 		float change = 0;
 		for(float[] effect : queue) {
-			change -= effect[1] > effect[0] ? effect[0] : effect[1];
+			change += effect[1] > effect[0] ? effect[0] : effect[1];
 		}
 		update();
 		return change;

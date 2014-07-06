@@ -7,6 +7,7 @@ import org.lwjgl.opengl.GL11;
 
 import com.binaryaura.staminamod.StaminaMod;
 import com.binaryaura.staminamod.entity.player.StaminaPlayer;
+import com.binaryaura.staminamod.entity.player.StaminaPlayer.StaminaType;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -174,7 +175,8 @@ public class GuiStamina extends GuiIngameForge {
 			if(mc.playerController.shouldDrawHUD()) {
 				
 				// Ask if the game should render each, if so, do so
-				if(renderStamina) renderStamina(width, height);
+//				if(renderStamina) renderStamina(width, height);
+				left_height += 10;
 				if(renderHealth) renderHealth(width, height);
 				if(renderArmor) renderArmor(width, height);
 			}
@@ -223,24 +225,35 @@ public class GuiStamina extends GuiIngameForge {
 	*  @param width is the width of the window for location calculation
 	*  @param height is the height of the window for location calculation
 	*/
-	protected void renderStamina(int width, int height) {
+	@SubscribeEvent(priority = EventPriority.NORMAL)
+	public void renderStamina(RenderGameOverlayEvent event) {
+//	protected void renderStamina(int width, int height) {
+		if(event.type != ElementType.BOSSHEALTH || event.isCancelable()) return;
+		if(mc.playerController.enableEverythingIsScrewedUpMode() || !mc.playerController.shouldDrawHUD()) return;
+		
 		props = StaminaPlayer.get(mc.thePlayer);	// Extended Properties
-		if(props == null || props.getStamina() == 0) return;
+		if(props == null || props.getStamina(StaminaType.STAMINA) == 0) return;
+		
+		left_height = 39;
+		
+		int width = mc.displayWidth;
+		int height = mc.displayHeight;
 		
 		mc.mcProfiler.startSection("stamina");
 		GL11.glEnable(GL11.GL_BLEND);
+//		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 		bind(staminaBar);
-			
+					
 		int left = width / 2 - 93;
 		int top  = height - left_height;
 		int barWidth = 82;
 		
-		int maximumFill = (int)(props.getMaximumStamina() / props.getStamina() * barWidth); // M
-		int currentFill = (int)(props.getCurrentStamina() / props.getStamina() * barWidth); // C
-		int adrenalineFill = (int)(props.getAdrenaline() / props.getStamina() * barWidth);  // A
+		int maximumFill = (int)(props.getStamina(StaminaType.MAXIMUM) / props.getStamina(StaminaType.STAMINA) * barWidth); // M
+		int currentFill = (int)(props.getStamina(StaminaType.CURRENT) / props.getStamina(StaminaType.STAMINA) * barWidth); // C
+		int adrenalineFill = (int)(props.getStamina(StaminaType.ADRENALINE) / props.getStamina(StaminaType.STAMINA) * barWidth);  // A
 		
-//		System.out.printf("CURRENT: %-7.1f MAXIMUM: %-7.1f ADRENALINE: %-7.1f STAMINA: %-7.1f %n", props.getCurrentStamina(), props.getMaximumStamina(), props.getAdrenaline(), props.getStamina());
+		System.out.printf("%.1f : %.1f : %.1f : %.1f %n", props.getStamina(StaminaType.CURRENT), props.getStamina(StaminaType.MAXIMUM), props.getStamina(StaminaType.ADRENALINE), props.getStamina(StaminaType.STAMINA));
 		
 //		int maximumFill = (int)(1500 / 2000 * barWidth);   // M
 //		int currentFill = (int)(1000 / 2000 * barWidth);   // C
