@@ -1,17 +1,17 @@
 [
 {
-   "modid": "staminamod",
-   "name": Stamina Mod",
-   "description": "Adds Stamina to the game and a new bar.",
-   "version": "1.0.0.1",
-   "mcversion": "1.7.2",
-   "logoFile": "",
-   "url": "",
-   "updateUrl": "",
-   "authorList": ["BinaryAura"],
-   "credits": "Made by BinaryAura",
-   "parent": "",
-   "screenshots": [],
-   "dependencies": ["Minecraft Forge 10.12.2.1121", "Minecraft 1.7.2"]
+  "modid": "staminamod",
+  "name": "Stamina Mod",
+  "description": "Adds Stamina to the game and a new bar.",
+  "version": "1.0.0.10",
+  "mcversion": "1.7.2",
+  "logoFile": "",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["BinaryAura"],
+  "credits": "Made by BinaryAura",
+  "parent": "",
+  "screenshots": [],
+  "dependencies": ["Minecraft Forge 10.12.2.1121", "Minecraft 1.7.2"]
 }
 ]
