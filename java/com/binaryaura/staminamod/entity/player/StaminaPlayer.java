@@ -10,7 +10,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
-
 import net.minecraftforge.common.IExtendedEntityProperties;
 
 public class StaminaPlayer implements IExtendedEntityProperties {
@@ -29,11 +28,19 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 			return this.meta;
 		}
 		
-		private int meta;
+		private final int meta;
 	}
 	
 	public final static String NAME = "StaminaPlayer";
-	private final static float DEFAULT_STAMINA = 2000.0F;
+	public final static float DEFAULT_STAMINA = 2000.0F;
+	
+	public static final void register(EntityPlayer player) {
+		player.registerExtendedProperties(NAME, new StaminaPlayer(player));
+	}
+	
+	public static final StaminaPlayer get(EntityPlayer player) {
+		return (StaminaPlayer)player.getExtendedProperties(NAME);
+	}
 
 	public StaminaPlayer(EntityPlayer player) {
 		this.player = player;
@@ -44,12 +51,87 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 		this.dw.addObject(StaminaType.ADRENALINE.getMeta(), 0.0F);
 	}
 	
-	public static final void register(EntityPlayer player) {
-		player.registerExtendedProperties(NAME, new StaminaPlayer(player));
+	public void addToQueue(StaminaType type, float amount) {
+		if(type == null) throw new NullPointerException("Type must not be null.");
+		switch(type) {
+			case CURRENT:
+				currentStaminaQueue.add(amount);
+				break;
+			case MAXIMUM:
+				maximumStaminaQueue.add(amount);
+				break;
+			case ADRENALINE:
+				adrenQueue.add(amount);
+				break;
+			default:
+				throw new IllegalArgumentException("Type must be current, maximum, or adrenaline.");
+		}
 	}
 	
-	public static final StaminaPlayer get(EntityPlayer player) {
-		return (StaminaPlayer)player.getExtendedProperties(NAME);
+	public void addToQueue(StaminaType type, float amount, float time) {
+		if(type == null) throw new NullPointerException("Type must not be null.");
+		if(time < 0) throw new IllegalArgumentException("Time must not be negative.");
+		if(time == 0) addToQueue(type, amount);
+		float delta = amount / (time * 40);
+		switch(type) {
+			case CURRENT:
+				currentStaminaQueue.add(amount, delta);
+				break;
+			case MAXIMUM:
+				maximumStaminaQueue.add(amount, delta);
+				break;
+			case ADRENALINE:
+				adrenQueue.add(amount, delta);
+				break;
+			default:
+				throw new IllegalArgumentException("Type must be current, maximum, or adrenaline.");
+		}
+	}
+	
+	public void exhaust(StaminaType type) {
+		set(type, 0.0F);
+	}
+
+	@Override
+	public void init(Entity entity, World world) { }
+	
+	public void invokeAdrenaline() {
+		invokeAdrenaline(false);
+	}
+	
+	public void invokeAdrenaline(boolean override) {
+		if(canInvokeAdrenaline || override) {
+			adrenQueue.add(getStaminaValue(StaminaType.STAMINA) - getStaminaValue(StaminaType.ADRENALINE), DEFAULT_STAMINA / (5.0F * 40));
+		}
+	}
+
+	@Override
+	public void loadNBTData(NBTTagCompound compound) {
+		NBTTagCompound properties = (NBTTagCompound)compound.getTag(NAME);
+		this.dw.updateObject(StaminaType.STAMINA.getMeta(), properties.getFloat("Stamina"));
+		this.dw.updateObject(StaminaType.CURRENT.getMeta(), properties.getFloat("CurrentStamina"));
+		this.dw.updateObject(StaminaType.MAXIMUM.getMeta(), properties.getFloat("MaximumStamina"));
+		this.dw.updateObject(StaminaType.ADRENALINE.getMeta(), properties.getFloat("Adrenaline"));
+	}
+	
+	public void replenish(StaminaType type) {
+		set(type, getStaminaValue(StaminaType.STAMINA));
+	}
+	
+	public void reset(StaminaType type) {
+		if (type == null) throw new NullPointerException("Type must not be null.");
+		switch(type) {
+			case CURRENT:
+				currentStaminaQueue.reset();;
+				break;
+			case MAXIMUM:
+				maximumStaminaQueue.reset();;
+				break;
+			case ADRENALINE:
+				adrenQueue.reset();
+			default:
+				throw new IllegalArgumentException("Type must be current, maximum, or adrenaline.");
+		}
 	}
 	
 	@Override
@@ -61,47 +143,79 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 		properties.setFloat("Adrenaline", this.dw.getWatchableObjectFloat(StaminaType.ADRENALINE.getMeta()));
 		compound.setTag(NAME, properties);
 	}
-
-	@Override
-	public void loadNBTData(NBTTagCompound compound) {
-		NBTTagCompound properties = (NBTTagCompound)compound.getTag(NAME);
-		this.dw.updateObject(StaminaType.STAMINA.getMeta(), properties.getFloat("Stamina"));
-		this.dw.updateObject(StaminaType.CURRENT.getMeta(), properties.getFloat("CurrentStamina"));
-		this.dw.updateObject(StaminaType.MAXIMUM.getMeta(), properties.getFloat("MaximumStamina"));
-		this.dw.updateObject(StaminaType.ADRENALINE.getMeta(), properties.getFloat("Adrenaline"));
-	}
-
-	@Override
-	public void init(Entity entity, World world) { }
 	
-	public void addToQueue(StaminaType type, float amount) {
-		if(type == null) throw new IllegalArgumentException("Type must not be null.");
-		if(type.equals(StaminaType.CURRENT)) {
-			currentStaminaQueue.add(amount);
-		} else if(type.equals(StaminaType.MAXIMUM)) {
-			maximumStaminaQueue.add(amount);
+	public void set(StaminaType type, float amount) {
+		this.dw.updateObject(type.getMeta(), amount);
+	}
+	
+	public void setFrozen(StaminaType type, boolean freeze) {
+		switch (type) {
+			case CURRENT:
+				updateCurrent = !freeze;
+				break;
+			case MAXIMUM:
+				updateMaximum = !freeze;
+				break;
+			case ADRENALINE:
+				updateAdren = !freeze;
+				break;
+			case STAMINA:
+				updateMaximum = !freeze;
+				updateMaximum = !freeze;
+				updateAdren = !freeze;
+				break;
+			default:
+				throw new NullPointerException("Type must not be null");	
 		}
 	}
 	
-	public void addToQueue(StaminaType type, float amount, float time) {
-		if(type == null) throw new IllegalArgumentException("Type must not be null.");
-		if(time < 0) throw new IllegalArgumentException("Time must not be negative.");
-		if(time == 0) addToQueue(type, amount);
-		float delta = amount / (time * 40);
-		if(type.equals(StaminaType.CURRENT)) {
-			currentStaminaQueue.add(amount, delta);
-		} else if(type.equals(StaminaType.MAXIMUM)) {
-			maximumStaminaQueue.add(amount, delta);
-		} else if(type.equals(StaminaType.ADRENALINE)) {
-			adrenQueue.add(amount);
+	public void setStamina(float amount) {
+		this.dw.updateObject(StaminaType.STAMINA.getMeta(), amount);
+	}
+	
+	public void update() {
+		float stamina = getStaminaValue(StaminaType.STAMINA);
+		float current = getStaminaValue(StaminaType.CURRENT);
+		float maximum = getStaminaValue(StaminaType.MAXIMUM);
+		float adrenaline = getStaminaValue(StaminaType.ADRENALINE);
+		
+		System.out.println(updateCurrent);
+		
+		if (updateCurrent) current += currentStaminaQueue.getNetChange();
+		if (updateMaximum) maximum += maximumStaminaQueue.getNetChange();
+		if (updateAdren) adrenaline += adrenQueue.getNetChange();
+		
+		if(maximum >= stamina) maximum = stamina;
+		if(maximum <= 0.0F) maximum = 0.0F;
+		
+		if (adrenaline > 0) {
+			isAdrenalineActive = true;
+			if (adrenaline >= stamina) {
+				adrenaline = stamina;
+				adrenHasPeaked = true;
+				adrenQueue.reset();
+				adrenQueue.add(-stamina, DEFAULT_STAMINA / (30.0F * 40));
+			}
+			if (updateAdren && adrenHasPeaked && current >= adrenaline) current = adrenaline;
+		} else if (isAdrenalineActive) {
+			adrenaline = 0.0F;
+			isAdrenalineActive = false;
+			adrenHasPeaked = false;
+			adrenQueue.reset();
+			adrenCooldownTimer = 12000;
+		} else if (!canInvokeAdrenaline && --adrenCooldownTimer <= 0) {
+			canInvokeAdrenaline = true;
 		}
-	}
+		
+		if(current >= maximum) current = maximum;
+		if(current <= 0.0F) current = 0.0F;
+		
+		this.dw.updateObject(StaminaType.CURRENT.getMeta(), current);
+		this.dw.updateObject(StaminaType.MAXIMUM.getMeta(), maximum);
+		this.dw.updateObject(StaminaType.ADRENALINE.getMeta(), adrenaline);
+	}	
 	
-	public float getDefaultStamina() {
-		return this.DEFAULT_STAMINA;
-	}
-	
-	public float getStamina(StaminaType type) {
+	public float getStaminaValue(StaminaType type) {
 		switch(type) {
 			case STAMINA:
 				 return this.dw.getWatchableObjectFloat(StaminaType.STAMINA.getMeta());
@@ -112,64 +226,18 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 			case ADRENALINE:
 				return this.dw.getWatchableObjectFloat(StaminaType.ADRENALINE.getMeta());
 			default:
-				throw new IllegalArgumentException("Type must not be null.");
+				throw new NullPointerException("Type must not be null.");
 		}
 	}
 	
-	public void invokeAdrenaline() {
-		if(canInvokeAdrenaline) {
-			isAdrenalineActive = true;
-			canInvokeAdrenaline = false;
-			adrenQueue.add(this.dw.getWatchableObjectFloat(StaminaType.STAMINA.getMeta()), 10.0F);
-		}
-	}
-	
-	public void update() {
-		float stamina = this.dw.getWatchableObjectFloat(StaminaType.STAMINA.getMeta());
-		float current = this.dw.getWatchableObjectFloat(StaminaType.CURRENT.getMeta());
-		float maximum = this.dw.getWatchableObjectFloat(StaminaType.MAXIMUM.getMeta());
-		float adrenaline = this.dw.getWatchableObjectFloat(StaminaType.ADRENALINE.getMeta());
-		
-		current += currentStaminaQueue.getNetChange();
-		maximum += maximumStaminaQueue.getNetChange();
-		adrenaline += adrenQueue.getNetChange();
-		
-		if(maximum >= stamina) maximum = stamina;
-		if(maximum <= 0.0F) maximum = 0.0F;
-		
-		if(isAdrenalineActive) {
-			if(adrenaline >= stamina) {
-				adrenaline = stamina;
-				adrenHasPeaked = true;
-				adrenQueue.add(stamina, 5.0F / 3.0F);
-			}
-			if(adrenaline <= 0) {
-				adrenaline = 0.0F;
-				isAdrenalineActive = false;
-				adrenCooldownTimer = 12000;
-			}
-			if(adrenHasPeaked && current >= adrenaline) current = adrenaline;
-			this.dw.updateObject(StaminaType.ADRENALINE.getMeta(), adrenaline);
-		} else if(canInvokeAdrenaline == false && --adrenCooldownTimer <= 0) {
-			canInvokeAdrenaline = true;
-			adrenHasPeaked = false;
-		}
-		
-		if(current >= maximum) current = maximum;
-		if(current <= 0.0F) current = 0.0F;
-		
-		this.dw.updateObject(StaminaType.CURRENT.getMeta(), current);
-		this.dw.updateObject(StaminaType.MAXIMUM.getMeta(), maximum);
-//		System.out.printf("%.1f : %.1f : %.1f %n", current, maximum, stamina);
-	}
-	
-	public void setStamina(float amount) {
-		this.dw.updateObject(StaminaType.STAMINA.getMeta(), amount);
-	}
-	
-	private boolean canInvokeAdrenaline = true;
 	private boolean adrenHasPeaked = false;
+	private boolean canInvokeAdrenaline = true;
 	private boolean isAdrenalineActive = false;
+	
+	private boolean updateCurrent = true;
+	private boolean updateMaximum = true;
+	private boolean updateAdren = true;
+	
 	private int adrenCooldownTimer = 0;
 	
 	private final DataWatcher dw;

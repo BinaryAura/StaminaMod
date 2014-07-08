@@ -240,11 +240,11 @@ public class StaminaStats {
 								usesToExhaust /= -2;
 								usesToExhaust /= difficultyModifier(player);
 							}							
-							change = props.getDefaultStamina() / usesToExhaust;
+							change = props.DEFAULT_STAMINA / usesToExhaust;
 						}else
-							change = (props.getDefaultStamina() / (-400 / difficultyModifier(player)));
+							change = (props.DEFAULT_STAMINA / (-400 / difficultyModifier(player)));
 					}catch(NullPointerException e){
-						change = (props.getDefaultStamina() / (-400 / difficultyModifier(player)));
+						change = (props.DEFAULT_STAMINA / (-400 / difficultyModifier(player)));
 					}finally{
 						props.addToQueue(StaminaType.CURRENT, change, 0.25F);
 					}

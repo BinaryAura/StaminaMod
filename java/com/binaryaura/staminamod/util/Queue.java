@@ -40,10 +40,17 @@ public class Queue {
 		return change;
 	}
 	
+	public void reset() {
+		queue = new float[0][2];
+	}
+	
 	private void update() {
 		for(int i = 0; i < queue.length; i++) {
 			queue[i][1] -= queue[i][1] > queue[i][0] ? queue[i][0] : queue[i][1];			
-			if((int) queue[i][1] <= 0.0F) remove(i);			
+			if((int) queue[i][1] <= 0.0F) {
+				remove(i);
+				--i;
+			}
 		}
 	}
 	

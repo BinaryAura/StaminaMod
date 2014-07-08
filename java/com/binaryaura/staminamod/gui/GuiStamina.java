@@ -221,7 +221,7 @@ public class GuiStamina extends GuiIngameForge {
 	protected void renderStamina(int width, int height) {
 		
 		props = StaminaPlayer.get(mc.thePlayer);	// Extended Properties
-		if(props == null || props.getStamina(StaminaType.STAMINA) == 0) return;
+		if(props == null || props.getStaminaValue(StaminaType.STAMINA) == 0) return;
 		
 		mc.mcProfiler.startSection("stamina");
 		GL11.glEnable(GL11.GL_BLEND);
@@ -232,13 +232,13 @@ public class GuiStamina extends GuiIngameForge {
 		int top  = height - left_height;
 		int barWidth = 82;
 		
-//		int maximumFill = (int)(props.getStamina(StaminaType.MAXIMUM) / props.getStamina(StaminaType.STAMINA) * barWidth); // M
-//		int currentFill = (int)(props.getStamina(StaminaType.CURRENT) / props.getStamina(StaminaType.STAMINA) * barWidth); // C
-//		int adrenalineFill = (int)(props.getStamina(StaminaType.ADRENALINE) / props.getStamina(StaminaType.STAMINA) * barWidth);  // A
+		int maximumFill = (int)(props.getStaminaValue(StaminaType.MAXIMUM) / props.getStaminaValue(StaminaType.STAMINA) * barWidth); // M
+		int currentFill = (int)(props.getStaminaValue(StaminaType.CURRENT) / props.getStaminaValue(StaminaType.STAMINA) * barWidth); // C
+		int adrenalineFill = (int)(props.getStaminaValue(StaminaType.ADRENALINE) / props.getStaminaValue(StaminaType.STAMINA) * barWidth);  // A
 		
-		int maximumFill = (int)(1000.0F / 2000.0F * barWidth);
-		int currentFill = (int)(500.0F / 2000.0F * barWidth);
-		int adrenalineFill = (int)(1500.0F / 2000.0F * barWidth);
+//		int maximumFill = (int)(1000.0F / 2000.0F * barWidth);
+//		int currentFill = (int)(500.0F / 2000.0F * barWidth);
+//		int adrenalineFill = (int)(1500.0F / 2000.0F * barWidth);
 		
 //		System.out.printf("%.1f : %.1f : %.1f : %.1f %n", props.getStamina(StaminaType.CURRENT), props.getStamina(StaminaType.MAXIMUM), props.getStamina(StaminaType.ADRENALINE), props.getStamina(StaminaType.STAMINA));
 		

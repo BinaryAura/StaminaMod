@@ -1,0 +1,32 @@
+commands.stamina.noSuchType='%s' is not a valid type of Stamina. Must be current, maximum, or adrenaline.
+commands.stamina.playerHasNoProps='%s' has no Stamina properties. This is a bug.
+commands.stamina.usage=/stamina <exhaust|replenish|set|add|invoke|reset|freeze>
+
+commands.stamina.add.failure.negativeTime=Couldn't add %1$.2f to %3$s's %2$s STAMINA. Time cannot be a negative value.
+commands.stamina.add.success.immediate=Added %1$.2f to %4$s's %2$s STAMINA. Value is now %3$.2f.
+commands.stamina.add.success.overTime=Adding %1$.2f to %4$s's %2$s STAMINA over %3$.2f seconds.
+commands.stamina.add.usage=/stamina add [player] <type> <value> [time]
+
+commands.stamina.exhaust.success=Exhausted %2$s's %1$s STAMINA.
+commands.stamina.exhaust.usage=/stamina exhaust [player] <type>
+
+commands.stamina.freeze.success.freezeAll=Froze all of %s's STAMINA.
+commands.stamina.freeze.success.freezeOne=Froze %2$s's %1$s STAMINA.
+commands.stamina.freeze.success.unfreezeAll=Unfroze all of %s's STAMINA.
+commands.stamina.freeze.success.unfreezeOne=Unfroze %2$s's %1$s STAMINA.
+commands.stamina.freeze.usage=/stamina freeze [player] [type] <value>
+
+commands.stamina.invoke.success=Invoked %s's ADRENALINE.
+commands.stamina.invoke.usage=/stamina invoke [player] <type>
+commands.stamina.invoke.wrongType=Cannot invoke %s STAMINA. Can also invoke ADRENALINE STAMINA.
+
+commands.stamina.replenish.success=Replenished %2$s's %1$s STAMINA.
+commands.stamina.replenish.usage=/stamina [player] replenish <type>
+
+commands.stamina.reset.success=Reset %2$s's %1$s STAMINA queue.
+commands.stamina.reset.usage=/stamina reset [player] <type>
+
+commands.stamina.set.failure.abovePossibleVaule=Couldn't set %4$s's %1$s STAMINA to %2$.2f. Value is above highest possible stamina: %f.
+commands.stamina.set.failure.negativeValue=Couldn't set %3$s's %1$s STAMINA to %2$.2f. Must be a positive value.
+commands.stamina.set.success=Set %3$s's %2$s STAMINA to %1$.2f
+commands.stamina.set.usage=/stamina set [player] <type> <value>
