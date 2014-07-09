@@ -179,7 +179,7 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 		float maximum = getStaminaValue(StaminaType.MAXIMUM);
 		float adrenaline = getStaminaValue(StaminaType.ADRENALINE);
 		
-		System.out.println(updateCurrent);
+		System.out.println(++counter + " : " + updateCurrent);
 		
 		if (updateCurrent) current += currentStaminaQueue.getNetChange();
 		if (updateMaximum) maximum += maximumStaminaQueue.getNetChange();
@@ -196,7 +196,7 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 				adrenQueue.reset();
 				adrenQueue.add(-stamina, DEFAULT_STAMINA / (30.0F * 40));
 			}
-			if (updateAdren && adrenHasPeaked && current >= adrenaline) current = adrenaline;
+			if (updateCurrent && adrenHasPeaked && current >= adrenaline) current = adrenaline;
 		} else if (isAdrenalineActive) {
 			adrenaline = 0.0F;
 			isAdrenalineActive = false;
@@ -239,6 +239,7 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 	private boolean updateAdren = true;
 	
 	private int adrenCooldownTimer = 0;
+	private int counter = 0;
 	
 	private final DataWatcher dw;
 	private final EntityPlayer player;
