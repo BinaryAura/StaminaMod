@@ -1,12 +1,14 @@
 package com.binaryaura.staminamod;
 
 import com.binaryaura.staminamod.command.CommandStamina;
-import com.binaryaura.staminamod.gui.GuiStamina;
+import com.binaryaura.staminamod.network.handlers.FreezePacketHandler;
+import com.binaryaura.staminamod.network.handlers.TotalStaminaPacketHandler;
+import com.binaryaura.staminamod.network.packets.FreezePacket;
+import com.binaryaura.staminamod.network.packets.TotalStaminaPacket;
 import com.binaryaura.staminamod.stats.StaminaStats;
 
-import net.minecraft.client.Minecraft;
 import net.minecraftforge.common.MinecraftForge;
-import cpw.mods.fml.common.FMLCommonHandler;
+
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.Mod.Instance;
@@ -16,7 +18,7 @@ import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.network.NetworkRegistry;
-import cpw.mods.fml.common.registry.LanguageRegistry;
+import cpw.mods.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import cpw.mods.fml.relauncher.Side;
 
 @Mod(modid = StaminaMod.MODID, name = StaminaMod.NAME, version = StaminaMod.VERSION, canBeDeactivated = true)
@@ -27,6 +29,7 @@ public class StaminaMod {
 	public static final String VERSION = "pre-Alpha";
 	public static final String CLIENTPROXY = "com.binaryaura.staminamod.client.";
 	public static final String COMMONPROXY = "com.binaryaura.staminamod.";
+	public static SimpleNetworkWrapper channel;
 	
 	// The instance of your mod that Forge uses.
 	@Instance(MODID)
@@ -38,6 +41,9 @@ public class StaminaMod {
 	
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
+			channel = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
+			channel.registerMessage(TotalStaminaPacketHandler.class, TotalStaminaPacket.class, 0, Side.CLIENT);
+			channel.registerMessage(FreezePacketHandler.class, FreezePacket.class, 1, Side.CLIENT);
 	}
 	
 	@EventHandler
@@ -47,14 +53,11 @@ public class StaminaMod {
 	
 	@EventHandler
 	public void postInit(FMLPostInitializationEvent event) {
-		MinecraftForge.EVENT_BUS.register(new StaminaStats(mc));
-		MinecraftForge.EVENT_BUS.register(new GuiStamina(mc));		
+		MinecraftForge.EVENT_BUS.register(new StaminaStats());		
 	}
 	
 	@EventHandler
 	public void serverStarting(FMLServerStartingEvent event) {
 		event.registerServerCommand(new CommandStamina());
 	}
-	
-	private static Minecraft mc = Minecraft.getMinecraft();
 }

@@ -1,13 +1,15 @@
 package com.binaryaura.staminamod.entity.player;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.binaryaura.staminamod.StaminaMod;
+import com.binaryaura.staminamod.network.packets.FreezePacket;
+import com.binaryaura.staminamod.network.packets.TotalStaminaPacket;
 import com.binaryaura.staminamod.util.Queue;
 
+import cpw.mods.fml.common.FMLCommonHandler;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.DataWatcher;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 import net.minecraftforge.common.IExtendedEntityProperties;
@@ -31,10 +33,10 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 		private final int meta;
 	}
 	
-	public final static String NAME = "StaminaPlayer";
 	public final static float DEFAULT_STAMINA = 2000.0F;
+	public final static String NAME = "StaminaPlayer";
 	
-	public static final void register(EntityPlayer player) {
+	public final static void register(EntityPlayer player) {
 		player.registerExtendedProperties(NAME, new StaminaPlayer(player));
 	}
 	
@@ -167,10 +169,16 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 			default:
 				throw new NullPointerException("Type must not be null");	
 		}
+		if (player.worldObj.isRemote) {
+			StaminaMod.channel.sendTo(new FreezePacket(freeze, type), (EntityPlayerMP) player);
+		}
 	}
 	
 	public void setStamina(float amount) {
 		this.dw.updateObject(StaminaType.STAMINA.getMeta(), amount);
+		if (player.worldObj.isRemote) {
+			StaminaMod.channel.sendTo(new TotalStaminaPacket(amount), (EntityPlayerMP) player);
+		}
 	}
 	
 	public void update() {
@@ -179,7 +187,7 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 		float maximum = getStaminaValue(StaminaType.MAXIMUM);
 		float adrenaline = getStaminaValue(StaminaType.ADRENALINE);
 		
-		System.out.println(++counter + " : " + updateCurrent);
+		System.out.println(FMLCommonHandler.instance().getSide().toString() + (++counter) + " : " + updateCurrent);
 		
 		if (updateCurrent) current += currentStaminaQueue.getNetChange();
 		if (updateMaximum) maximum += maximumStaminaQueue.getNetChange();

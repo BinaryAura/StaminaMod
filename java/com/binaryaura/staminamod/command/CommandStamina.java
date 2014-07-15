@@ -6,8 +6,6 @@ import com.binaryaura.staminamod.entity.player.StaminaPlayer.StaminaType;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
-import net.minecraft.command.NumberInvalidException;
-import net.minecraft.command.PlayerNotFoundException;
 import net.minecraft.command.WrongUsageException;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -31,219 +29,221 @@ public class CommandStamina extends CommandBase {
 
 	@Override
 	public void processCommand(ICommandSender commandSender, String[] args) {
-		if (args.length < 1) {
-			throw new WrongUsageException("commands.stamina.usage", new Object[0]);
-		}
-		
-		StaminaType type = null;
-		
-		if (args[0].equals("exhaust") || args[0].equalsIgnoreCase("empty")) {
-			if(args.length == 1) {
-				throw new WrongUsageException("commands.stamina.exhaust.usage", new Object[0]);
+		if (commandSender instanceof EntityPlayer) {
+			if (args.length < 1) {
+				throw new WrongUsageException("commands.stamina.usage", new Object[0]);
 			}
 			
-			if (args.length == 2) {
-				player = getCommandSenderAsPlayer(commandSender);
-				type = parseType(args[1]);
+			StaminaType type = null;
+			
+			if (args[0].equals("exhaust") || args[0].equalsIgnoreCase("empty")) {
+				if(args.length == 1) {
+					throw new WrongUsageException("commands.stamina.exhaust.usage", new Object[0]);
+				}
 				
-			} else if (args.length == 3) {
-				player = getPlayer(commandSender, args[1]);
-				type = parseType(args[2]);
+				if (args.length == 2) {
+					player = getCommandSenderAsPlayer(commandSender);
+					type = parseType(args[1]);
+					
+				} else if (args.length == 3) {
+					player = getPlayer(commandSender, args[1]);
+					type = parseType(args[2]);
+					
+				} else {
+					throw new WrongUsageException("commands.stamina.replenish.usage", new Object[0]);
+				}
+				props = getProps();
+				props.exhaust(type);
+				notifyAdmins(commandSender, "commands.stamina.exhaust.success", new Object[] {type, player.getCommandSenderName()});
 				
-			} else {
-				throw new WrongUsageException("commands.stamina.replenish.usage", new Object[0]);
-			}
-			props = getProps();
-			props.exhaust(type);
-			notifyAdmins(commandSender, "commands.stamina.exhaust.success", new Object[] {type, player.getCommandSenderName()});
-			
-		} else if (args[0].equals("replenish") || args[0].equalsIgnoreCase("fill")) {
-			if (args.length == 1) {
-				throw new WrongUsageException("commands.stamina.replenish.usage", new Object[0]);
-			}
-			
-			if (args.length == 2) {
-				player = getCommandSenderAsPlayer(commandSender);
-				type = parseType(args[1]);
+			} else if (args[0].equals("replenish") || args[0].equalsIgnoreCase("fill")) {
+				if (args.length == 1) {
+					throw new WrongUsageException("commands.stamina.replenish.usage", new Object[0]);
+				}
 				
-			} else if (args.length == 3) {
-				player = getPlayer(commandSender, args[1]);
-				type = parseType(args[2]);
+				if (args.length == 2) {
+					player = getCommandSenderAsPlayer(commandSender);
+					type = parseType(args[1]);
+					
+				} else if (args.length == 3) {
+					player = getPlayer(commandSender, args[1]);
+					type = parseType(args[2]);
+					
+				} else {
+					throw new WrongUsageException("commands.stamina.replenish.usage", new Object[0]);
+				}
+				props = getProps();	
+				props.replenish(type);
+				notifyAdmins(commandSender, "commands.stamina.replenish.success", new Object[] {type, player.getCommandSenderName()});			
 				
-			} else {
-				throw new WrongUsageException("commands.stamina.replenish.usage", new Object[0]);
-			}
-			props = getProps();	
-			props.replenish(type);
-			notifyAdmins(commandSender, "commands.stamina.replenish.success", new Object[] {type, player.getCommandSenderName()});			
-			
-		} else if (args[0].equals("set")) {
-			if (args.length < 3) {
-				throw new WrongUsageException("commands.stamina.set.usage", new Object[0]);
-			}
-			
-			float value = 0;
-			
-			if (args.length == 3) {
-				player = getCommandSenderAsPlayer(commandSender);
-				type = parseType(args[1]);			
-				value = (float) parseDoubleBounded(commandSender, args[2], 0.0F, props.getStaminaValue(StaminaType.STAMINA));
+			} else if (args[0].equals("set")) {
+				if (args.length < 3) {
+					throw new WrongUsageException("commands.stamina.set.usage", new Object[0]);
+				}
 				
-			} else if (args.length == 4) {
-				player = getPlayer(commandSender, args[1]);
-				type = parseType(args[2]);				
-				value = (float) parseDoubleBounded(commandSender, args[3], 0.0F, props.getStaminaValue(StaminaType.STAMINA));
+				float value = 0;
 				
-			} else {
-				throw new WrongUsageException("commands.stamina.set.usage", new Object[0]);
-			}
-			props = getProps();	
-			props.set(type, value);
-			notifyAdmins(commandSender, "commands.stamina.set.success", new Object[] {value, type, player.getCommandSenderName()});
-			
-			
-		} else if (args[0].equals("add")) {
-			if (args.length < 3) {
-				throw new WrongUsageException("commands.stamina.add.usage", new Object[0]);
-			}
-			
-			float value = 0, time = 0;
-			
-			// Add Immediately
-			if (isType(args[2])) {
 				if (args.length == 3) {
 					player = getCommandSenderAsPlayer(commandSender);
-					type = parseType(args[1]);		
-					value = (float) parseDouble(commandSender, args[2]);
+					type = parseType(args[1]);			
+					value = (float) parseDoubleBounded(commandSender, args[2], 0.0F, props.getStaminaValue(StaminaType.STAMINA));
 					
 				} else if (args.length == 4) {
 					player = getPlayer(commandSender, args[1]);
-					type = parseType(args[2]);			
-					value = (float) parseDouble(commandSender, args[3]);
+					type = parseType(args[2]);				
+					value = (float) parseDoubleBounded(commandSender, args[3], 0.0F, props.getStaminaValue(StaminaType.STAMINA));
 					
 				} else {
+					throw new WrongUsageException("commands.stamina.set.usage", new Object[0]);
+				}
+				props = getProps();	
+				props.set(type, value);
+				notifyAdmins(commandSender, "commands.stamina.set.success", new Object[] {value, type, player.getCommandSenderName()});
+				
+				
+			} else if (args[0].equals("add")) {
+				if (args.length < 3) {
 					throw new WrongUsageException("commands.stamina.add.usage", new Object[0]);
 				}
-				props = getProps();		
-				props.addToQueue(type, value);
-				notifyAdmins(commandSender, "commands.stamina.add.success.immediate", new Object[] {value, type, props.getStaminaValue(StaminaType.STAMINA), player.getCommandSenderName()});
 				
-			// Add Over Time
-			} else if (isType(args[1])) {
-				if (args.length == 4) {
-					player = getCommandSenderAsPlayer(commandSender);
-					type = parseType(args[1]);				
-					value = (float) parseDouble(commandSender, args[2]);
-					time = (float) parseDouble(commandSender, args[3]);
+				float value = 0, time = 0;
+				
+				// Add Immediately
+				if (isType(args[2])) {
+					if (args.length == 3) {
+						player = getCommandSenderAsPlayer(commandSender);
+						type = parseType(args[1]);		
+						value = (float) parseDouble(commandSender, args[2]);
+						
+					} else if (args.length == 4) {
+						player = getPlayer(commandSender, args[1]);
+						type = parseType(args[2]);			
+						value = (float) parseDouble(commandSender, args[3]);
+						
+					} else {
+						throw new WrongUsageException("commands.stamina.add.usage", new Object[0]);
+					}
+					props = getProps();		
+					props.addToQueue(type, value);
+					notifyAdmins(commandSender, "commands.stamina.add.success.immediate", new Object[] {value, type, props.getStaminaValue(StaminaType.STAMINA), player.getCommandSenderName()});
 					
-				} else if (args.length == 5) {					
-					player = getPlayer(commandSender, args[1]);
-					type = parseType(args[2]);			
-					value = (float) parseDouble(commandSender, args[3]);
-					time = (float) parseDouble(commandSender, args[4]);
+				// Add Over Time
+				} else if (isType(args[1])) {
+					if (args.length == 4) {
+						player = getCommandSenderAsPlayer(commandSender);
+						type = parseType(args[1]);				
+						value = (float) parseDouble(commandSender, args[2]);
+						time = (float) parseDouble(commandSender, args[3]);
+						
+					} else if (args.length == 5) {					
+						player = getPlayer(commandSender, args[1]);
+						type = parseType(args[2]);			
+						value = (float) parseDouble(commandSender, args[3]);
+						time = (float) parseDouble(commandSender, args[4]);
+						
+					} else {
+						throw new WrongUsageException("commands.stamina.add.usage", new Object[0]);
+					}
+					props = getProps();
+					if (time < 0) throw new CommandException("commands.stamina.add.failure.negativeTime", new Object[] {time, type, player.getCommandSenderName()});
+					props.addToQueue(type, value, time);
+					notifyAdmins(commandSender, "commands.stamina.add.success.overTime", new Object[] {value, type, time, player.getCommandSenderName()});
 					
 				} else {
-					throw new WrongUsageException("commands.stamina.add.usage", new Object[0]);
+					throw new WrongUsageException("commands.stamina.noSuchType", new Object[0]);
 				}
-				props = getProps();
-				if (time < 0) throw new CommandException("commands.stamina.add.failure.negativeTime", new Object[] {time, type, player.getCommandSenderName()});
-				props.addToQueue(type, value, time);
-				notifyAdmins(commandSender, "commands.stamina.add.success.overTime", new Object[] {value, type, time, player.getCommandSenderName()});
 				
-			} else {
-				throw new WrongUsageException("commands.stamina.noSuchType", new Object[0]);
-			}
-			
-		} else if (args[0].equals("invoke")) {
-			if(args.length == 1) {
-				throw new WrongUsageException("commands.stamina.invoke.usage", new Object[0]);
-			}
-			
-			if (args.length == 2) {
-				player = getCommandSenderAsPlayer(commandSender);
-				type = parseType(args[1]);
+			} else if (args[0].equals("invoke")) {
+				if(args.length == 1) {
+					throw new WrongUsageException("commands.stamina.invoke.usage", new Object[0]);
+				}
 				
-			} else if (args.length == 3) {
-				player = getPlayer(commandSender, args[1]);
-				type = parseType(args[2]);
-				
-			} else {
-				throw new WrongUsageException("commands.stamina.invoke.usage", new Object[0]);
-			}
-			props = getProps();
-			invoke(type);
-			notifyAdmins(commandSender, "commands.stamina.invoke.success", new Object[] {player.getCommandSenderName()});
-			
-		} else if (args[0].equals("reset")) {
-			if (args.length == 1) {
-				throw new WrongUsageException("commands.stamina.reset.usage", new Object[0]);
-			}
-			
-			if (args.length == 2) {
-				player = getCommandSenderAsPlayer(commandSender);
-				type = parseType(args[1]);
-				
-			} else if (args.length == 3) {
-				player = getPlayer(commandSender, args[1]);
-				type = parseType(args[2]);
-				
-			} else {
-				throw new WrongUsageException("commands.stamina.reset.usage", new Object[0]);
-			}
-			props = getProps();
-			props.reset(type);
-			notifyAdmins(commandSender, "commands.stamina.reset.success", new Object[] {type, player.getCommandSenderName()});
-			
-		} else if (args[0].equals("freeze")) {
-			if (args.length == 1) {
-				throw new WrongUsageException("commands.stamina.freeze.usage", new Object[0]);
-			}
-			
-			boolean value;
-			
-			if (args.length == 2) {
-				player = getCommandSenderAsPlayer(commandSender);
-				value = parseBoolean(commandSender, args[1]);
-				type = StaminaType.STAMINA;
-				
-			} else if (args.length == 3) {
-				if(!isType(args[1])) {
-					player = getPlayer(commandSender, args[1]);
-					value = parseBoolean(commandSender, args[2]);
-					type = StaminaType.STAMINA;
-					
-				} else {
+				if (args.length == 2) {
 					player = getCommandSenderAsPlayer(commandSender);
 					type = parseType(args[1]);
-					value = parseBoolean(commandSender, args[2]);				
-				}
-				
-			} else if (args.length == 4) {
-				player = getPlayer(commandSender, args[1]);
-				type = parseType(args[2]);
-				value = parseBoolean(commandSender, args[3]);
-				
-			} else {
-				throw new WrongUsageException("commands.stamina.freeze.usage", new Object[0]);
-			}
-			props = getProps();
-			props.setFrozen(type, value);
-			if (value) {
-				if (type == StaminaType.STAMINA) {
-					notifyAdmins(commandSender, "commands.stamina.freeze.success.freezeAll", new Object[] {player.getCommandSenderName()});
+					
+				} else if (args.length == 3) {
+					player = getPlayer(commandSender, args[1]);
+					type = parseType(args[2]);
+					
 				} else {
-					notifyAdmins(commandSender, "commands.stamina.freeze.success.freezeOne", new Object[] {type, player.getCommandSenderName()});
+					throw new WrongUsageException("commands.stamina.invoke.usage", new Object[0]);
+				}
+				props = getProps();
+				invoke(type);
+				notifyAdmins(commandSender, "commands.stamina.invoke.success", new Object[] {player.getCommandSenderName()});
+				
+			} else if (args[0].equals("reset")) {
+				if (args.length == 1) {
+					throw new WrongUsageException("commands.stamina.reset.usage", new Object[0]);
 				}
 				
-			} else {
-				if (type == StaminaType.STAMINA) {
-					notifyAdmins(commandSender, "commands.stamina.freeze.success.unfreezeAll", new Object[] {player.getCommandSenderName()});
+				if (args.length == 2) {
+					player = getCommandSenderAsPlayer(commandSender);
+					type = parseType(args[1]);
+					
+				} else if (args.length == 3) {
+					player = getPlayer(commandSender, args[1]);
+					type = parseType(args[2]);
+					
 				} else {
-					notifyAdmins(commandSender, "commands.stamina.freeze.success.unfreezeOne", new Object[] {type, player.getCommandSenderName()});
+					throw new WrongUsageException("commands.stamina.reset.usage", new Object[0]);
 				}
+				props = getProps();
+				props.reset(type);
+				notifyAdmins(commandSender, "commands.stamina.reset.success", new Object[] {type, player.getCommandSenderName()});
+				
+			} else if (args[0].equals("freeze")) {
+				if (args.length == 1) {
+					throw new WrongUsageException("commands.stamina.freeze.usage", new Object[0]);
+				}
+				
+				boolean value;
+				
+				if (args.length == 2) {
+					player = getCommandSenderAsPlayer(commandSender);
+					value = parseBoolean(commandSender, args[1]);
+					type = StaminaType.STAMINA;
+					
+				} else if (args.length == 3) {
+					if(!isType(args[1])) {
+						player = getPlayer(commandSender, args[1]);
+						value = parseBoolean(commandSender, args[2]);
+						type = StaminaType.STAMINA;
+						
+					} else {
+						player = getCommandSenderAsPlayer(commandSender);
+						type = parseType(args[1]);
+						value = parseBoolean(commandSender, args[2]);				
+					}
+					
+				} else if (args.length == 4) {
+					player = getPlayer(commandSender, args[1]);
+					type = parseType(args[2]);
+					value = parseBoolean(commandSender, args[3]);
+					
+				} else {
+					throw new WrongUsageException("commands.stamina.freeze.usage", new Object[0]);
+				}
+				props = getProps();
+				props.setFrozen(type, value);
+				if (value) {
+					if (type == StaminaType.STAMINA) {
+						notifyAdmins(commandSender, "commands.stamina.freeze.success.freezeAll", new Object[] {player.getCommandSenderName()});
+					} else {
+						notifyAdmins(commandSender, "commands.stamina.freeze.success.freezeOne", new Object[] {type, player.getCommandSenderName()});
+					}
+					
+				} else {
+					if (type == StaminaType.STAMINA) {
+						notifyAdmins(commandSender, "commands.stamina.freeze.success.unfreezeAll", new Object[] {player.getCommandSenderName()});
+					} else {
+						notifyAdmins(commandSender, "commands.stamina.freeze.success.unfreezeOne", new Object[] {type, player.getCommandSenderName()});
+					}
+				}
+			} else {
+				throw new WrongUsageException("commands.stamina.usage", new Object[0]);
 			}
-		} else {
-			throw new WrongUsageException("commands.stamina.usage", new Object[0]);
 		}
 	}
 	

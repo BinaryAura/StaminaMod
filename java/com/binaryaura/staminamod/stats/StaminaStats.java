@@ -4,7 +4,6 @@ import com.binaryaura.staminamod.entity.player.StaminaPlayer;
 import com.binaryaura.staminamod.entity.player.StaminaPlayer.StaminaType;
 
 import net.minecraft.block.Block;
-import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.Item;
@@ -16,7 +15,6 @@ import net.minecraft.item.ItemSpade;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemSword;
 import net.minecraft.item.ItemTool;
-import net.minecraft.world.EnumDifficulty;
 import net.minecraftforge.event.entity.EntityEvent.EntityConstructing;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent;
 import net.minecraftforge.event.entity.living.LivingEvent.LivingUpdateEvent;
@@ -28,7 +26,7 @@ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 
 public class StaminaStats {
 	
-	private static Minecraft mc;
+//	private static Minecraft mc = Minecraft.getMinecraft();
 	
 	private static float difficultyModifier(EntityPlayer player) {
 		float difficultyModifier = 1.0F;
@@ -139,16 +137,14 @@ public class StaminaStats {
 	return energyMultiplier;
 	}
 	
-	public StaminaStats(Minecraft mc) {
-		this.mc = mc;
-	}
+	public StaminaStats() {}
 	
 	@SubscribeEvent(priority = EventPriority.NORMAL)
 	public void handleFood(PlayerUseItemEvent.Finish event) {
-		if(event.entity instanceof EntityPlayer) {
-			EntityPlayer player = (EntityPlayer)event.entity;
+		if(event.entity instanceof EntityPlayerMP) {
+			EntityPlayerMP player = (EntityPlayerMP)event.entity;
 			StaminaPlayer props = StaminaPlayer.get(player);
-			if(props != null && mc.playerController.isNotCreative()) {
+			if(props != null && !player.capabilities.isCreativeMode) {				//mc.playerController.isNotCreative()					
 				ItemStack itemStack = player.inventory.getCurrentItem();
 				Item itemInUse = itemStack.getItem();
 				if(itemInUse instanceof ItemFood) {
@@ -165,7 +161,7 @@ public class StaminaStats {
 		if(event.entity instanceof EntityPlayer) {
 			EntityPlayer player = (EntityPlayer)event.entity;
 			StaminaPlayer props = StaminaPlayer.get(player);
-			if(props != null && mc.playerController.isNotCreative()) {
+			if(props != null && !player.capabilities.isCreativeMode) {
 //				player.motionY = 0.20;
 			}
 		}
@@ -182,7 +178,7 @@ public class StaminaStats {
 		if(event.entity instanceof EntityPlayer) {
 			EntityPlayer player = (EntityPlayer)event.entity;
 			StaminaPlayer props = StaminaPlayer.get(player);
-			if(props != null && mc.playerController.isNotCreative()) {
+			if(props != null && !player.capabilities.isCreativeMode) {
 				float armorMulti = 0.0F;
 				ItemStack[] armor = player.inventory.armorInventory;
 				for(int i = 0; i < armor.length; i++) {
@@ -208,7 +204,7 @@ public class StaminaStats {
 		if(event.entity instanceof EntityPlayer) {
 			EntityPlayer player = (EntityPlayer)event.entity;
 			StaminaPlayer props = StaminaPlayer.get(player);
-			if(props != null && mc.playerController.isNotCreative()) {
+			if(props != null && !player.capabilities.isCreativeMode) {
 				if(event.action == Action.LEFT_CLICK_BLOCK) {
 					float change = 0;
 					try{
@@ -240,11 +236,11 @@ public class StaminaStats {
 								usesToExhaust /= -2;
 								usesToExhaust /= difficultyModifier(player);
 							}							
-							change = props.DEFAULT_STAMINA / usesToExhaust;
+							change = StaminaPlayer.DEFAULT_STAMINA / usesToExhaust;
 						}else
-							change = (props.DEFAULT_STAMINA / (-400 / difficultyModifier(player)));
+							change = (StaminaPlayer.DEFAULT_STAMINA / (-400 / difficultyModifier(player)));
 					}catch(NullPointerException e){
-						change = (props.DEFAULT_STAMINA / (-400 / difficultyModifier(player)));
+						change = (StaminaPlayer.DEFAULT_STAMINA / (-400 / difficultyModifier(player)));
 					}finally{
 						props.addToQueue(StaminaType.CURRENT, change, 0.25F);
 					}
@@ -252,5 +248,7 @@ public class StaminaStats {
 			}
 		}
 	}
+	
+//	private void addToStamina(EntityPlayerMP player, StaminaType type)
 	
 }

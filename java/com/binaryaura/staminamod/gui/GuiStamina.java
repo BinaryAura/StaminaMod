@@ -1,8 +1,5 @@
 package com.binaryaura.staminamod.gui;
 
-import static net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType.ARMOR;
-import static net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType.HEALTH;
-
 import org.lwjgl.opengl.GL11;
 
 import com.binaryaura.staminamod.StaminaMod;
@@ -11,6 +8,7 @@ import com.binaryaura.staminamod.entity.player.StaminaPlayer.StaminaType;
 
 import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.entity.SharedMonsterAttributes;
@@ -18,11 +16,11 @@ import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.potion.Potion;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
+
 import net.minecraftforge.client.GuiIngameForge;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType;
 import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.common.MinecraftForge;
 
 /**
  * GuiStamina extends GuiIngameForge to gain access to the protected Objects:
@@ -42,15 +40,17 @@ public class GuiStamina extends GuiIngameForge {
 	// Top of the first bar on the left side of the HUD, excluding the XP bar, This would be my Stamina Bar.
 	public static int left_height = 36;
 	
-	private static Minecraft mc = Minecraft.getMinecraft();
+	private static Minecraft mc;
 	private static final ResourceLocation staminaBar = new ResourceLocation(StaminaMod.MODID, "textures/gui/stamina_bar.png");
 	
 	/**
 	 * 
 	 * @param mc
 	 */
+	
 	public GuiStamina(Minecraft mc) {
 		super(mc);
+		GuiStamina.mc = mc;
 		
 		// Disable Vanilla rendering for Health and Armor (Left Side Bars)
 		GuiIngameForge.renderHealth = false;
@@ -79,16 +79,16 @@ public class GuiStamina extends GuiIngameForge {
 	            highlight = false;
 	        }
 
-	        IAttributeInstance attrMaxHealth = this.mc.thePlayer.getEntityAttribute(SharedMonsterAttributes.maxHealth);
+	        IAttributeInstance attrMaxHealth = GuiStamina.mc.thePlayer.getEntityAttribute(SharedMonsterAttributes.maxHealth);
 	        int health = MathHelper.ceiling_float_int(mc.thePlayer.getHealth());
 	        int healthLast = MathHelper.ceiling_float_int(mc.thePlayer.prevHealth);
 	        float healthMax = (float)attrMaxHealth.getAttributeValue();
-	        float absorb = this.mc.thePlayer.getAbsorptionAmount();
+	        float absorb = GuiStamina.mc.thePlayer.getAbsorptionAmount();
 
 	        int healthRows = MathHelper.ceiling_float_int((healthMax + absorb) / 2.0F / 10.0F);
 	        int rowHeight = Math.max(10 - (healthRows - 2), 3);
 	        
-	        super.rand.setSeed((long)(super.updateCounter * 312871));
+	        super.rand.setSeed(super.updateCounter * 312871);
 
 	        int left = width / 2 - 91;
 	        int top = height - left_height;
@@ -108,7 +108,7 @@ public class GuiStamina extends GuiIngameForge {
 	        float absorbRemaining = absorb;	        
 	        
 	        for (int i = MathHelper.ceiling_float_int((healthMax + absorb) / 2.0F) - 1; i >= 0; --i) {
-	            int row = MathHelper.ceiling_float_int((float)(i + 1) / 10.0F) - 1;
+	            int row = MathHelper.ceiling_float_int((i + 1) / 10.0F) - 1;
 	            int x = left + i % 10 * 8;
 	            int y = top - row * rowHeight;
 
