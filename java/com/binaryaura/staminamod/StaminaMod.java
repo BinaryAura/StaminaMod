@@ -1,8 +1,6 @@
 package com.binaryaura.staminamod;
 
 import com.binaryaura.staminamod.command.CommandStamina;
-import com.binaryaura.staminamod.network.handlers.FreezePacketHandler;
-import com.binaryaura.staminamod.network.handlers.TotalStaminaPacketHandler;
 import com.binaryaura.staminamod.network.packets.FreezePacket;
 import com.binaryaura.staminamod.network.packets.TotalStaminaPacket;
 import com.binaryaura.staminamod.stats.StaminaStats;
@@ -26,7 +24,7 @@ public class StaminaMod {
 
 	public static final String MODID = "staminamod";
 	public static final String NAME = "Stamina Mod";
-	public static final String VERSION = "pre-Alpha";
+	public static final String VERSION = "INDEV";
 	public static final String CLIENTPROXY = "com.binaryaura.staminamod.client.";
 	public static final String COMMONPROXY = "com.binaryaura.staminamod.";
 	public static SimpleNetworkWrapper channel;
@@ -42,8 +40,8 @@ public class StaminaMod {
 	@EventHandler
 	public void preInit(FMLPreInitializationEvent event) {
 			channel = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
-			channel.registerMessage(TotalStaminaPacketHandler.class, TotalStaminaPacket.class, 0, Side.CLIENT);
-			channel.registerMessage(FreezePacketHandler.class, FreezePacket.class, 1, Side.CLIENT);
+			channel.registerMessage(TotalStaminaPacket.class, TotalStaminaPacket.class, 0, Side.CLIENT);
+			channel.registerMessage(FreezePacket.class, FreezePacket.class, 1, Side.CLIENT);
 	}
 	
 	@EventHandler

@@ -1,25 +1,32 @@
 package com.binaryaura.staminamod.network.packets;
 
+import net.minecraft.client.Minecraft;
+import net.minecraft.entity.player.EntityPlayer;
+
+import com.binaryaura.staminamod.StaminaMod;
 import com.binaryaura.staminamod.entity.player.StaminaPlayer;
 import com.binaryaura.staminamod.entity.player.StaminaPlayer.StaminaType;
 
 import io.netty.buffer.ByteBuf;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
+import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
+import cpw.mods.fml.common.network.simpleimpl.MessageContext;
+import cpw.mods.fml.relauncher.Side;
 
-public class FreezePacket implements IMessage{
+public class FreezePacket implements IMessage, IMessageHandler<FreezePacket, IMessage>{
 
 	public FreezePacket() {}
 	
-	public FreezePacket(boolean freeze, StaminaType type) {
-		this.freeze = freeze;
+	public FreezePacket(StaminaType type, boolean freeze) {
 		this.type = type;
+		this.freeze = freeze;
 		
 	}
 
 	@Override
 	public void fromBytes(ByteBuf buf) {
 		freeze = buf.readBoolean();
-		int data = buf.readInt();
+		byte data = buf.readByte();
 		switch (data) {
 			case 0:
 				type = StaminaType.STAMINA;
@@ -34,14 +41,14 @@ public class FreezePacket implements IMessage{
 				type = StaminaType.ADRENALINE;
 				break;
 			default:
-				return;
+				assert false : "Invalid type recieved";
 		}
 	}
 
 	@Override
 	public void toBytes(ByteBuf buf) {
 		buf.writeBoolean(freeze);
-		byte data;
+		byte data = 0;
 		switch (type) {
 			case STAMINA:
 				data = 0;
@@ -56,17 +63,21 @@ public class FreezePacket implements IMessage{
 				data = 3;
 				break;
 			default:
-				return;
+				assert false : "Attempted to send an Invalid type";
 		}
-		buf.writeInt(data);
+		buf.writeByte(data);
 	}
 	
-	public boolean getFreeze() {
-		return freeze;
-	}
-	
-	public StaminaType getType() {
-		return type;
+	@Override
+	public IMessage onMessage(FreezePacket message, MessageContext ctx) {
+		EntityPlayer player = StaminaMod.proxy.getPlayerFromMessageContext(ctx);
+		if (ctx.side == Side.CLIENT) {
+			System.out.println("F Packet Recieved on CLIENT");
+			StaminaPlayer props = StaminaPlayer.get(player);
+			System.out.println(type);
+			props.setFrozen(message.type, message.freeze);			
+		}
+		return null;
 	}
 	
 	private boolean freeze;

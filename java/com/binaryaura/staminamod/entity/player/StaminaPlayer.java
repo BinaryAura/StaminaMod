@@ -47,7 +47,8 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 	public StaminaPlayer(EntityPlayer player) {
 		this.player = player;
 		this.dw = this.player.getDataWatcher();
-		this.dw.addObject(StaminaType.STAMINA.getMeta(), DEFAULT_STAMINA);
+		//this.dw.addObject(StaminaType.STAMINA.getMeta(), DEFAULT_STAMINA);
+		this.stamina = DEFAULT_STAMINA;
 		this.dw.addObject(StaminaType.CURRENT.getMeta(), DEFAULT_STAMINA);
 		this.dw.addObject(StaminaType.MAXIMUM.getMeta(), DEFAULT_STAMINA);
 		this.dw.addObject(StaminaType.ADRENALINE.getMeta(), 0.0F);
@@ -110,7 +111,8 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 	@Override
 	public void loadNBTData(NBTTagCompound compound) {
 		NBTTagCompound properties = (NBTTagCompound)compound.getTag(NAME);
-		this.dw.updateObject(StaminaType.STAMINA.getMeta(), properties.getFloat("Stamina"));
+		//this.dw.updateObject(StaminaType.STAMINA.getMeta(), properties.getFloat("Stamina"));
+		this.stamina = properties.getFloat("Stamina");
 		this.dw.updateObject(StaminaType.CURRENT.getMeta(), properties.getFloat("CurrentStamina"));
 		this.dw.updateObject(StaminaType.MAXIMUM.getMeta(), properties.getFloat("MaximumStamina"));
 		this.dw.updateObject(StaminaType.ADRENALINE.getMeta(), properties.getFloat("Adrenaline"));
@@ -139,7 +141,8 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 	@Override
 	public void saveNBTData(NBTTagCompound compound) {
 		NBTTagCompound properties = new NBTTagCompound();
-		properties.setFloat("Stamina", this.dw.getWatchableObjectFloat(StaminaType.STAMINA.getMeta()));
+		//properties.setFloat("Stamina", this.dw.getWatchableObjectFloat(StaminaType.STAMINA.getMeta()));
+		properties.setFloat("Stamina", stamina);
 		properties.setFloat("CurrentStamina", this.dw.getWatchableObjectFloat(StaminaType.CURRENT.getMeta()));
 		properties.setFloat("MaximumStamina", this.dw.getWatchableObjectFloat(StaminaType.MAXIMUM.getMeta()));
 		properties.setFloat("Adrenaline", this.dw.getWatchableObjectFloat(StaminaType.ADRENALINE.getMeta()));
@@ -147,6 +150,12 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 	}
 	
 	public void set(StaminaType type, float amount) {
+		if (type.equals(StaminaType.STAMINA)) {
+			stamina = amount;
+			if (!player.worldObj.isRemote) {
+				StaminaMod.channel.sendTo(new TotalStaminaPacket(amount), (EntityPlayerMP) player);
+			}
+		}
 		this.dw.updateObject(type.getMeta(), amount);
 	}
 	
@@ -169,15 +178,8 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 			default:
 				throw new NullPointerException("Type must not be null");	
 		}
-		if (player.worldObj.isRemote) {
-			StaminaMod.channel.sendTo(new FreezePacket(freeze, type), (EntityPlayerMP) player);
-		}
-	}
-	
-	public void setStamina(float amount) {
-		this.dw.updateObject(StaminaType.STAMINA.getMeta(), amount);
-		if (player.worldObj.isRemote) {
-			StaminaMod.channel.sendTo(new TotalStaminaPacket(amount), (EntityPlayerMP) player);
+		if (!player.worldObj.isRemote) {
+			StaminaMod.channel.sendTo(new FreezePacket(type, freeze), (EntityPlayerMP) player);
 		}
 	}
 	
@@ -187,7 +189,7 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 		float maximum = getStaminaValue(StaminaType.MAXIMUM);
 		float adrenaline = getStaminaValue(StaminaType.ADRENALINE);
 		
-		System.out.println(FMLCommonHandler.instance().getSide().toString() + (++counter) + " : " + updateCurrent);
+		System.out.println((!player.worldObj.isRemote ? "SERVER" : "CLIENT") + (++counter) + " : " + updateCurrent);
 		
 		if (updateCurrent) current += currentStaminaQueue.getNetChange();
 		if (updateMaximum) maximum += maximumStaminaQueue.getNetChange();
@@ -226,7 +228,7 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 	public float getStaminaValue(StaminaType type) {
 		switch(type) {
 			case STAMINA:
-				 return this.dw.getWatchableObjectFloat(StaminaType.STAMINA.getMeta());
+				 return stamina;
 			case CURRENT:
 				return this.dw.getWatchableObjectFloat(StaminaType.CURRENT.getMeta());
 			case MAXIMUM:
@@ -248,6 +250,8 @@ public class StaminaPlayer implements IExtendedEntityProperties {
 	
 	private int adrenCooldownTimer = 0;
 	private int counter = 0;
+	
+	private float stamina;
 	
 	private final DataWatcher dw;
 	private final EntityPlayer player;

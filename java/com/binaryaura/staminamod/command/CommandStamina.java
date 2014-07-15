@@ -225,6 +225,7 @@ public class CommandStamina extends CommandBase {
 				} else {
 					throw new WrongUsageException("commands.stamina.freeze.usage", new Object[0]);
 				}
+				
 				props = getProps();
 				props.setFrozen(type, value);
 				if (value) {
@@ -241,6 +242,7 @@ public class CommandStamina extends CommandBase {
 						notifyAdmins(commandSender, "commands.stamina.freeze.success.unfreezeOne", new Object[] {type, player.getCommandSenderName()});
 					}
 				}
+				
 			} else {
 				throw new WrongUsageException("commands.stamina.usage", new Object[0]);
 			}
